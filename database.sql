@@ -160,7 +160,7 @@ add_Event_Order_relation(1,4);
 add_Event_Order_relation(2,3);
 add_Event_Order_relation(2,4);
 add_Event_Order_relation(3,3);
-add_Event_Order_relation(3,5);
+add_Event_Order_relation(3,1);
 END;
 /
 
@@ -232,9 +232,9 @@ END;
 BEGIN
 add_Expenditure(1,100,200,30,1);
 add_Expenditure(2,200,300,40,2);
-add_Expenditure(3,300,400,50,3);
-add_Expenditure(4,400,500,60,4);
 add_Expenditure(5,500,600,70,5);
+add_Expenditure(4,400,500,60,4);
+add_Expenditure(3,300,400,50,3);
 END;
 /
 SELECT * from Expenditure;
@@ -245,3 +245,113 @@ end;
 /
 select Idescription from IMenu where Idescription like '%food%';
 
+
+BEGIN
+dbms_output.put_line('Sorting a table using Order By');
+end;
+/
+select * from Expenditure order by transportationCost,decorationCost desc;
+
+
+BEGIN
+dbms_output.put_line('Use of aggregate function');
+end;
+/
+
+select max(transportationCost) from Expenditure;
+select min(vatCost) from Expenditure;
+select avg(nvl(decorationCost,0)) from Expenditure;
+select sum(transportationCost) from Expenditure;
+select count(eventId) from Menu_Event_relation where eventId=1 or menuId=1;
+
+
+
+BEGIN
+dbms_output.put_line('Use of Group By and Having');
+end;
+/
+select orderId, count(orderId) from Event_Order_relation group by orderId having orderId>1;
+
+BEGIN
+dbms_output.put_line('Use of nested query');
+end;
+/
+
+select category,Idescription from IMenu where Idescription in (
+    select Idescription from IMenu where Idescription like '%food%');
+
+
+
+BEGIN
+dbms_output.put_line('Finding third max transportationCost using nested query');
+end;
+/
+
+select max(transportationCost) as thirdMaxTransportationCost from Expenditure where transportationCost < (
+    select max(transportationCost) from Expenditure where transportationCost not in(
+        select max(transportationCost) from Expenditure
+        )
+);
+
+
+BEGIN
+dbms_output.put_line('Use of union and intersection operation along with nested query');
+end;
+/
+
+select category,price from IMenu  where category in(
+     select category from IMenu where Idescription like '%food%'
+     intersect 
+     select category from IMenu where price<=1000
+)
+union 
+select category,price from IMenu  where Idescription like '%Drinks%';
+
+
+BEGIN
+dbms_output.put_line('Finding which type of event have not ordered by any user using Minus operation');
+end;
+/
+select eventName from IEvent
+minus
+select o.eventName from IEvent o,Event_Order_relation e where o.eventId=e.eventId;
+
+
+BEGIN
+dbms_output.put_line('use of join operation');
+end;
+/
+
+select d.eventName,l.transportationCost,l.decorationCost,l.vatCost
+ from IEvent d join Expenditure l
+  using(eventId);
+
+
+BEGIN
+dbms_output.put_line('use of outer join operation');
+end;
+/
+
+  select d.orderId,d.orderDate,e.userId,e.fName,e.lName 
+  from  Iorder d full outer join Iuser e
+  on d.userId=e.userId;
+
+
+BEGIN
+dbms_output.put_line('use of pl/sql');
+end;
+/
+ 
+ create or replace function calCostForEvent
+ RETURN NUMBER is
+ cost in Expenditure.transportationCost%type
+BEGIN
+cost=Expenditure.transportationCost where expenditureId=1;
+RETURN cost;
+end;
+/
+
+BEGIN
+dbms_output.put_line('calCostForEvent'||calCostForEvent);
+end;
+/
