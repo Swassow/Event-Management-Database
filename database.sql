@@ -1,5 +1,14 @@
 set serveroutput on;
 
+
+BEGIN
+dbms_output.put_line('Welcome to Event management Database');
+dbms_output.put_line('Todays date is');
+end;
+/
+select sysdate from dual;
+
+
 drop table Event_Order_relation;
 drop table Menu_Event_relation;
 drop table Expenditure;
@@ -71,6 +80,20 @@ create table Expenditure(
     eventId int not null,
     foreign key(eventId) REFERENCES IEvent(eventId) on delete CASCADE
 );
+
+--trigger for insert data
+
+create or replace trigger check_transportationCost before insert on Expenditure
+for each row
+declare
+price_min constant int :=100;
+price_max constant int :=5000;
+begin
+if:new.transportationCost>price_max then
+RAISE_APPLICATION_ERROR(-20000,'Price is too small or too large');
+end if;
+end check_transportationCost;
+/
 
 create or replace procedure add_IUser(
     userId_ IUser.userId%type,
@@ -186,6 +209,8 @@ add_IMenu(2,'Indian',8,'This is Indian food',1000);
 add_IMenu(3,'French',20,'This is French food',1500);
 add_IMenu(4,'appetizer',15,'This is appetizer',1000);
 add_IMenu(5,'Drinks',50,'This is Drinks',2000);
+--add_IMenu(6,'Itilian',30,'This is Italian food',20000);
+
 END;
 /
 
@@ -229,14 +254,17 @@ END;
 /
 
 
-BEGIN
-add_Expenditure(1,100,200,30,1);
-add_Expenditure(2,200,300,40,2);
-add_Expenditure(5,500,600,70,5);
-add_Expenditure(4,400,500,60,4);
-add_Expenditure(3,300,400,50,3);
-END;
-/
+insert into Expenditure(expenditureId,transportationCost,decorationCost,vatCost,eventId)
+VALUES(1,100,200,30,1);
+insert into Expenditure(expenditureId,transportationCost,decorationCost,vatCost,eventId)
+VALUES(2,200,300,40,2);
+insert into Expenditure(expenditureId,transportationCost,decorationCost,vatCost,eventId)
+VALUES(5,500,600,70,5);
+insert into Expenditure(expenditureId,transportationCost,decorationCost,vatCost,eventId)
+VALUES(4,400,500,60,4);
+insert into Expenditure(expenditureId,transportationCost,decorationCost,vatCost,eventId)
+VALUES(3,300,400,50,3);
+
 SELECT * from Expenditure;
 
 BEGIN
@@ -338,20 +366,57 @@ end;
 
 
 BEGIN
-dbms_output.put_line('use of pl/sql');
+dbms_output.put_line('use of pl/sql function');
 end;
 /
  
  create or replace function calCostForEvent
- RETURN NUMBER is
- cost in Expenditure.transportationCost%type
+ RETURN int is
+ cost Expenditure.transportationCost%type;
 BEGIN
-cost=Expenditure.transportationCost where expenditureId=1;
+select transportationCost into cost from Expenditure where expenditureId=1;
 RETURN cost;
 end;
 /
 
 BEGIN
-dbms_output.put_line('calCostForEvent'||calCostForEvent);
+dbms_output.put_line('calCostForEvent '||calCostForEvent);
 end;
+/
+
+BEGIN
+dbms_output.put_line('use of pl/sql cursor');
+end;
+/
+
+
+declare
+ cursor menu_cur is select category,quantity,Idescription from IMenu;
+ menu_record menu_cur%rowtype;
+ begin
+   open menu_cur;
+   loop
+     fetch menu_cur into menu_record;
+     exit when menu_cur%rowcount>4;
+     dbms_output.put_line('category: '||menu_record.category||' '||'. Description: '||menu_record.Idescription||'. quantity: '||menu_record.quantity);
+   end loop;
+   close menu_cur;
+ end;
+/
+
+
+declare
+ cursor expenditure_cur is select transportationCost,decorationCost,vatCost from Expenditure where expenditureId=1 or expenditureId=2;
+ expenditure_record expenditure_cur%rowtype;
+ begin
+   open expenditure_cur;
+   loop
+     fetch expenditure_cur into expenditure_record;
+     exit when expenditure_cur%rowcount>1;
+     dbms_output.put_line('transportationCost: '||expenditure_record.transportationCost||' '||'. decorationCost: '||expenditure_record.decorationCost||'. vatCost: '||expenditure_record.vatCost);
+     dbms_output.put_line('total Expenditure for event 1:');
+     dbms_output.put_line(expenditure_record.transportationCost+expenditure_record.decorationCost+expenditure_record.vatCost);
+   end loop;
+   close expenditure_cur;
+ end;
 /
