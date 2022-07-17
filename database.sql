@@ -238,3 +238,10 @@ add_Expenditure(5,500,600,70,5);
 END;
 /
 SELECT * from Expenditure;
+
+BEGIN
+dbms_output.put_line('Search a keyword inside a string using like');
+end;
+/
+select Idescription from IMenu where Idescription like '%food%';
+
